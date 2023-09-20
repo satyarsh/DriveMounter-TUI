@@ -20,7 +20,7 @@
 
 - a Data base file called `database_DriverMounter.db` will be created after running the app for the first time that will store all of your Favourite Mount Path's and Folder names.
 
-### ### Usage / Installation :
+### Usage / Installation :
 
 ##### Note : if Git is not installed do so with :
 
