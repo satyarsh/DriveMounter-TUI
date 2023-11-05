@@ -103,7 +103,7 @@ while True:
             print("\n" + "\033[91m {}\033[00m".format(f"Unmounting {input1}" + "\n"))
             print(lines1)
 
-            subprocess.run(["sudo","umount",f"/{input1}"])
+            subprocess.run(["sudo","umount",f"{input1}"])
 
             input3 = input("\033[91m {}\033[00m".format("Done! Press Any Key To continue! "))
             if input3:
