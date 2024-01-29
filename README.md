@@ -35,7 +35,7 @@ sudo dnf upgrade --refresh && sudo dnf install git
 #### Installation :
 
 ```
-git clone https://github.com/stking68/DriveMounter-TUI.git
+git clone https://github.com/satyarsh/DriveMounter-TUI.git
 cd DriveMounter-TUI/
 ```
 
