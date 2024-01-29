@@ -1,10 +1,10 @@
 #### ScreenShot :
 
-![ScreenShot](https://github.com/stking68/DriveMounter-TUI/blob/0a53d3aa8ee0d8f985ddcb768bc3706d8924482c/screen.jpg) 
+![ScreenShot](https://github.com/satyarsh/DriveMounter-TUI/blob/0a53d3aa8ee0d8f985ddcb768bc3706d8924482c/screen.jpg) 
 
-![ScreenShot](https://github.com/stking68/DriveMounter-TUI/blob/0a53d3aa8ee0d8f985ddcb768bc3706d8924482c/screen2.jpg) 
+![ScreenShot](https://github.com/satyarsh/DriveMounter-TUI/blob/0a53d3aa8ee0d8f985ddcb768bc3706d8924482c/screen2.jpg) 
 
-![ScreenShot](https://github.com/stking68/DriveMounter-TUI/blob/0a53d3aa8ee0d8f985ddcb768bc3706d8924482c/screen3.jpg) 
+![ScreenShot](https://github.com/satyarsh/DriveMounter-TUI/blob/0a53d3aa8ee0d8f985ddcb768bc3706d8924482c/screen3.jpg) 
 
 ### Features :
 
