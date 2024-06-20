@@ -2,248 +2,215 @@ import subprocess
 import sqlite3
 import os
 
-while True:
-    ### Var's ###
-    lines1 = "-----------------------------------------"
-    white_space = "     "
-    current_user = os.popen('echo -n "$USER"').read()
-    DefaultMountLocation = str()
-    mountFolderName = str()
-    Bye_Message = "\n" + "\033[91m {}\033[00m".format("-------- Good Bye! ---------------------")
+# Constants
+LINES = "-----------------------------------------"
+WHITE_SPACE = "     "
+CURRENT_USER = os.popen('echo -n "$USER"').read()
+BYE_MESSAGE = "\n" + "\033[91m {}\033[00m".format("-------- Good Bye! ---------------------")
 
-    ################## Sqlite Connection #################
+def get_db_connection():
     try:
-        sqliteConnection = sqlite3.connect('database_DriverMounter.db')
-        cursor = sqliteConnection.cursor()
-
+        connection = sqlite3.connect('database_DriverMounter.db')
+        return connection
     except sqlite3.Error as error:
-        terminal.run_command(f"echo 'Error occurred - {error}'")
+        print(f"Error occurred - {error}")
+        return None
 
-
-    sqliteConnection.execute('''CREATE TABLE IF NOT EXISTS Info
-        (
-        DefaultMountLocation TEXT ,
-        MountFolder TEXT
-        );''')
-    ######################################################
-
-    ######## Fetching Data From SQL Table ################
+def fetch_mount_info(cursor):
     cursor.execute("""SELECT * FROM Info""")
     rows = cursor.fetchall()
-    for row in rows:
-        DefaultMountLocation = row[0]
-        mountFolderName = row[1]
-    ######################################################
+    if rows:
+        return rows[-1][0], rows[-1][1]
+    return "", ""
 
+def mount(def_mount_loc, mount_fol, cursor, connection):
     try:
-        def Mount(def_mount_loc,MountFol):
-            print("  " + white_space,end='')
-            print("\033[94m {}\033[00m".format("Use Ctrl + C to Go back!"))
-            print(lines1)
-            print("  " + white_space,end='')
-            print("\033[91m {}\033[00m".format("Choose a Mount Point"))
-            print(lines1)
+        print("  " + WHITE_SPACE, end='')
+        print("\033[94m {}\033[00m".format("Use Ctrl + C to Go back!"))
+        print(LINES)
+        print("  " + WHITE_SPACE, end='')
+        print("\033[91m {}\033[00m".format("Choose a Mount Point"))
+        print(LINES)
 
-            subprocess.run("lsblk")
+        subprocess.run("lsblk")
 
-            input1 = input("\n" + "\033[91m {}\033[00m".format("Mount Point (sdb1,sda3 ...) : "))
+        input1 = input("\n" + "\033[91m {}\033[00m".format("Mount Point (sdb1,sda3 ...) : ")).strip()
 
-            if not MountFol:
-                input4 = input("\033[91m {}\033[00m".format("Name For The Mounted Folder : "))
-                subprocess.run(["sudo","mkdir",f"{def_mount_loc}/{input4}"])
-                sql_2 = f'''INSERT INTO Info (DefaultMountLocation,MountFolder) VALUES ("{def_mount_loc}","{input4}")'''
-                cursor.execute(sql_2)
-                sqliteConnection.commit()
-                print()
-                print(lines1)
-                print("\n" + "\033[91m {}\033[00m".format(f"Mounting /dev/{input1} to --> {def_mount_loc}/{input4}" + "\n"))
-                print(lines1)
-            else:
-                input3 = input("\033[91m {}\033[00m".format("Use the name " +"***"+str(MountFol)+"***"+ " (y/n)? "))
-                if input3.lower() == "y":
-                    subprocess.run(["sudo","mkdir",f"{def_mount_loc}/{MountFol}"])
-                    print()
-                    print(lines1)
-                    print("\n" + "\033[91m {}\033[00m".format(f"Mounting /dev/{input1} to --> {def_mount_loc}/{MountFol}" + "\n"))
-                    print(lines1)
+        if not mount_fol:
+            input4 = input("\033[91m {}\033[00m".format("Name For The Mounted Folder : ")).strip()
+            subprocess.run(["sudo", "mkdir", f"{def_mount_loc}/{input4}"])
+            cursor.execute('''INSERT INTO Info (DefaultMountLocation, MountFolder) VALUES (?, ?)''', (def_mount_loc, input4))
+            connection.commit()
+            print_mount_message(input1, def_mount_loc, input4)
+        else:
+            input3 = input("\033[91m {}\033[00m".format(f"Use the name ***{mount_fol}*** (y/n)? ")).strip().lower()
+            if input3 == "y":
+                subprocess.run(["sudo", "mkdir", f"{def_mount_loc}/{mount_fol}"])
+                print_mount_message(input1, def_mount_loc, mount_fol)
+            elif input3 == "n":
+                input4 = input("\033[91m {}\033[00m".format("Enter a New Name For The Mounted Folder : ")).strip()
+                subprocess.run(["sudo", "mkdir", f"{def_mount_loc}/{input4}"])
+                cursor.execute('''INSERT INTO Info (DefaultMountLocation, MountFolder) VALUES (?, ?)''', (def_mount_loc, input4))
+                connection.commit()
+                print_mount_message(input1, def_mount_loc, input4)
 
-                elif input3.lower() == "n":
-                    input4 = input("\033[91m {}\033[00m".format("Enter a New Name For The Mounted Folder : "))
-                    subprocess.run(["sudo","mkdir",f"{def_mount_loc}/{input4}"])
-                    sql_2 = f'''INSERT INTO Info (DefaultMountLocation,MountFolder) VALUES ("{def_mount_loc}","{input4}")'''
-                    cursor.execute(sql_2)
-                    sqliteConnection.commit()
-                    print()
-                    print(lines1)
-                    print("\n" + "\033[91m {}\033[00m".format(f"Mounting /dev/{input1} to --> {def_mount_loc}/{input4}" + "\n"))
-                    print(lines1)
-                    subprocess.run(["sudo","mount",f"/dev/{input1}",f"{def_mount_loc}/{input4}"])
-
-            input3 = input("\033[91m {}\033[00m".format("Done! Press Any Key To continue! "))
-            if input3:
-                pass
+        input("\033[91m {}\033[00m".format("Done! Press Any Key To continue! "))
     except KeyboardInterrupt:
-        print(Bye_Message)
+        print(BYE_MESSAGE)
 
+def print_mount_message(mount_point, def_mount_loc, folder):
+    print()
+    print(LINES)
+    print("\n" + "\033[91m {}\033[00m".format(f"Mounting /dev/{mount_point} to --> {def_mount_loc}/{folder}\n"))
+    print(LINES)
+    subprocess.run(["sudo", "mount", f"/dev/{mount_point}", f"{def_mount_loc}/{folder}"])
+
+def unmount():
     try:
-        def Unmount():
-            print("  " + white_space,end='')
-            print("\033[94m {}\033[00m".format("Use Ctrl + C to Go back!"))
-            print(lines1)
-            print("  " + white_space,end='')
-            print("\033[91m {}\033[00m".format("Choose a Path to Unmount"))
-            print(lines1)
+        print("  " + WHITE_SPACE, end='')
+        print("\033[94m {}\033[00m".format("Use Ctrl + C to Go back!"))
+        print(LINES)
+        print("  " + WHITE_SPACE, end='')
+        print("\033[91m {}\033[00m".format("Choose a Path to Unmount"))
+        print(LINES)
 
-            subprocess.run("lsblk")
+        subprocess.run("lsblk")
 
-            input1 = input("\n" + "\033[91m {}\033[00m".format("Enter The Full Path : "))
+        input1 = input("\n" + "\033[91m {}\033[00m".format("Enter The Full Path : ")).strip()
 
-            print()
-            print(lines1)
-            print("\n" + "\033[91m {}\033[00m".format(f"Unmounting {input1}" + "\n"))
-            print(lines1)
+        print()
+        print(LINES)
+        print("\n" + "\033[91m {}\033[00m".format(f"Unmounting {input1}\n"))
+        print(LINES)
 
-            subprocess.run(["sudo","umount",f"{input1}"])
+        subprocess.run(["sudo", "umount", f"{input1}"])
 
-            input3 = input("\033[91m {}\033[00m".format("Done! Press Any Key To continue! "))
-            if input3:
-                pass
+        input("\033[91m {}\033[00m".format("Done! Press Any Key To continue! "))
     except KeyboardInterrupt:
-        print(Bye_Message)
+        print(BYE_MESSAGE)
 
+def disk_poweroff():
     try:
-        def Disk_poweroff():
-            print("  " + white_space,end='')
-            print("\033[94m {}\033[00m".format("Use Ctrl + C to Go back!"))
-            print(lines1)
-            print("  " + white_space,end='')
-            print("\033[91m {}\033[00m".format("Choose a Drive to Poweroff"))
-            print(lines1)
+        print("  " + WHITE_SPACE, end='')
+        print("\033[94m {}\033[00m".format("Use Ctrl + C to Go back!"))
+        print(LINES)
+        print("  " + WHITE_SPACE, end='')
+        print("\033[91m {}\033[00m".format("Choose a Drive to Poweroff"))
+        print(LINES)
 
-            subprocess.run("lsblk")
+        subprocess.run("lsblk")
 
-            input1 = input("\n" + "\033[91m {}\033[00m".format("Enter The drive's name (sdb,sda ...) : "))
+        input1 = input("\n" + "\033[91m {}\033[00m".format("Enter The drive's name (sdb,sda ...) : ")).strip()
 
-            print()
-            print(lines1)
-            print("\n" + "\033[91m {}\033[00m".format(f"Turning Off ... {input1}" + "\n"))
-            print(lines1)
+        print()
+        print(LINES)
+        print("\n" + "\033[91m {}\033[00m".format(f"Turning Off ... {input1}\n"))
+        print(LINES)
 
-            subprocess.run(["sudo","udisksctl","power-off","-b",f"/dev/{input1}"])
+        subprocess.run(["sudo", "udisksctl", "power-off", "-b", f"/dev/{input1}"])
 
-            input3 = input("\033[91m {}\033[00m".format("Done! Press Any Key To continue! "))
-            if input3:
-                pass
+        input("\033[91m {}\033[00m".format("Done! Press Any Key To continue! "))
     except KeyboardInterrupt:
-        print(Bye_Message)
+        print(BYE_MESSAGE)
 
+def change_default_mount_location(mount_location, cursor, connection):
     try:
-        def Change_default_mount_location(mount_location):
-            print("  " + white_space,end='')
-            print("\033[94m {}\033[00m".format("Use Ctrl + C to Go back!"))
-            print(lines1)
-            if mount_location != "":
-                print("\033[91m {}\033[00m".format("The Default Location is : " + mount_location))
-                print(lines1)
+        print("  " + WHITE_SPACE, end='')
+        print("\033[94m {}\033[00m".format("Use Ctrl + C to Go back!"))
+        print(LINES)
+        if mount_location != "":
+            print("\033[91m {}\033[00m".format("The Default Location is : " + mount_location))
+            print(LINES)
 
-                input3 = input("\033[94m {}\033[00m".format("Do you want to change it? : (y/n) "))
-                if input3.lower() == "y":
-                    input4 = input("\033[91m {}\033[00m".format("Enter a new Location (Full Path) : "))
-                    sql_3 = f'''INSERT INTO Info (DefaultMountLocation) VALUES ('{input4}')'''
-                    cursor.execute(sql_3)
-                    sqliteConnection.commit()
+            input3 = input("\033[94m {}\033[00m".format("Do you want to change it? : (y/n) ")).strip().lower()
+            if input3 == "y":
+                input4 = input("\033[91m {}\033[00m".format("Enter a new Location (Full Path) : ")).strip()
+                cursor.execute('''INSERT INTO Info (DefaultMountLocation) VALUES (?)''', (input4,))
+                connection.commit()
 
-                cursor.execute("""SELECT * FROM Info""")
-                rows = cursor.fetchall()
-                for row in rows:
-                    DefaultMountLocation = row[0]
-                    mountFolderName = row[1]
-            
-            if mount_location == "":
-                input4 = input("\033[91m {}\033[00m".format("Enter a new Location (Full Path) : "))
-                sql_3 = f'''INSERT INTO Info (DefaultMountLocation) VALUES ('{input4}')'''
-                cursor.execute(sql_3)
-                sqliteConnection.commit()
+        if mount_location == "":
+            input4 = input("\033[91m {}\033[00m".format("Enter a new Location (Full Path) : ")).strip()
+            cursor.execute('''INSERT INTO Info (DefaultMountLocation) VALUES (?)''', (input4,))
+            connection.commit()
 
-                cursor.execute("""SELECT * FROM Info""")
-                rows = cursor.fetchall()
-                for row in rows:
-                    DefaultMountLocation = row[0]
-                    mountFolderName = row[1]
+        DefaultMountLocation, _ = fetch_mount_info(cursor)
 
-            print()
-            print(lines1)
-            print("\n" + "\033[91m {}\033[00m".format(f"Current location is {DefaultMountLocation}" + "\n"))
-            print(lines1)
+        print()
+        print(LINES)
+        print("\n" + "\033[91m {}\033[00m".format(f"Current location is {DefaultMountLocation}\n"))
+        print(LINES)
 
-            input3 = input("\033[91m {}\033[00m".format("Done! Press Any Key To continue! "))
-            if input3:
-                pass
+        input("\033[91m {}\033[00m".format("Done! Press Any Key To continue! "))
     except KeyboardInterrupt:
-        print(Bye_Message)
+        print(BYE_MESSAGE)
 
+def delete_database():
     try:
-        def Delete_Database():
-            print()
-            print(lines1)
-            print("\n" + "\033[91m {}\033[00m".format("Deleting ... database_DriverMounter.db" + "\n"))
-            print(lines1)
+        print()
+        print(LINES)
+        print("\n" + "\033[91m {}\033[00m".format("Deleting ... database_DriverMounter.db\n"))
+        print(LINES)
 
-            #subprocess.run(["sudo","rm","database_DriverMounter.db"])
-            subprocess.run(["rm","database_DriverMounter.db"])
+        subprocess.run(["rm", "database_DriverMounter.db"])
 
-
-            input3 = input("\033[91m {}\033[00m".format("Done! Press Any Key To continue! "))
-            if input3:
-                pass
+        input("\033[91m {}\033[00m".format("Done! Press Any Key To continue! "))
     except KeyboardInterrupt:
-        print(Bye_Message)
+        print(BYE_MESSAGE)
 
-
-    #Welcome Screen
-    try:
+def main():
+    while True:
+        try:
             subprocess.run("clear")
-            print(lines1)
-            print("\033[93m {}\033[00m".format(white_space + f"Welcome {current_user} To Drive Mounter!"))
-            print("\033[93m {}\033[00m".format(white_space + "By github.com/stking68"))
-            print(lines1)
+            print(LINES)
+            print("\033[93m {}\033[00m".format(WHITE_SPACE + f"Welcome {CURRENT_USER} To Drive Mounter!"))
+            print("\033[93m {}\033[00m".format(WHITE_SPACE + "By github.com/stking68"))
+            print(LINES)
 
-            print("\033[96m {}\033[00m".format(white_space + "Choose an Option"))
+            with get_db_connection() as sqliteConnection:
+                cursor = sqliteConnection.cursor()
+                cursor.execute('''CREATE TABLE IF NOT EXISTS Info
+                    (
+                    DefaultMountLocation TEXT,
+                    MountFolder TEXT
+                    );''')
+                DefaultMountLocation, mountFolderName = fetch_mount_info(cursor)
 
-            if DefaultMountLocation != "":
-                print("\033[96m {}\033[00m".format(white_space + f"Default Location is : {DefaultMountLocation}"))
-            else:
+                print("\033[96m {}\033[00m".format(WHITE_SPACE + "Choose an Option"))
+                if DefaultMountLocation:
+                    print("\033[96m {}\033[00m".format(WHITE_SPACE + f"Default Location is : {DefaultMountLocation}"))
+                else:
+                    print()
+                    print("\033[91m {}\033[00m".format(WHITE_SPACE + "Please Enter a Default \n" + WHITE_SPACE + " Mount Location Using [4] !"))
+                print(LINES)
+
                 print()
-                print("\033[91m {}\033[00m".format(white_space + f"Please Enter a Default \n"+ white_space +" Mount Location Using [4] !"))
-            print(lines1)
+                print("\033[95m {}\033[00m".format(WHITE_SPACE + "[1] Mount"))
+                print("\033[95m {}\033[00m".format(WHITE_SPACE + "[2] Unmount"))
+                print("\033[95m {}\033[00m".format(WHITE_SPACE + "[3] Poweroff Disk"))
+                print("\033[95m {}\033[00m".format(WHITE_SPACE + "[4] Change Default Mount Location"))
+                print("\033[95m {}\033[00m".format(WHITE_SPACE + "[5] Delete Database"))
+                print("\033[95m {}\033[00m".format(WHITE_SPACE + "[6] Exit"))
+                input_text = "\033[91m {}\033[00m".format(WHITE_SPACE + "----> ")
+                input4 = str(input(input_text)).strip()
+                subprocess.run("clear")
+                if input4 == "1":
+                    mount(DefaultMountLocation, mountFolderName, cursor, sqliteConnection)
+                elif input4 == "2":
+                    unmount()
+                elif input4 == "3":
+                    disk_poweroff()
+                elif input4 == "4":
+                    change_default_mount_location(DefaultMountLocation, cursor, sqliteConnection)
+                elif input4 == "5":
+                    delete_database()
+                elif input4 == "6":
+                    print(BYE_MESSAGE)
+                    break
+                else:
+                    print("Wrong input, try again!")
+        except KeyboardInterrupt:
+            print(BYE_MESSAGE)
+            break
 
-            print()
-            print("\033[95m {}\033[00m".format(white_space + "[1]Mount"))
-            print("\033[95m {}\033[00m".format(white_space + "[2]Unmount"))
-            print("\033[95m {}\033[00m".format(white_space + "[3]Poweroff Disk"))
-            print("\033[95m {}\033[00m".format(white_space + "[4]Change Default Mount Location"))
-            print("\033[95m {}\033[00m".format(white_space + "[5]Delete Database"))
-            print("\033[95m {}\033[00m".format(white_space + "[6]Exit"))
-            input_text = "\033[91m {}\033[00m".format(white_space + "----> ")
-            input4 = str(input(input_text))
-            if input4.lower() == "1":
-                subprocess.run("clear")
-                Mount(DefaultMountLocation,mountFolderName)
-            elif input4.lower() == "2":
-                subprocess.run("clear")
-                Unmount()
-            elif input4.lower() == "3":
-                subprocess.run("clear")
-                Disk_poweroff()
-            elif input4.lower() == "4":
-                subprocess.run("clear")
-                Change_default_mount_location(DefaultMountLocation)
-            elif input4.lower() == "5":
-                Delete_Database()
-            elif input4.lower() == "6":
-                print(Bye_Message)
-                break
-            else:
-                print("Wrong input try again!")
-    except KeyboardInterrupt:
-        pass
+if __name__ == "__main__":
+    main()
