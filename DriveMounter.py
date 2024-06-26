@@ -190,24 +190,30 @@ def main():
                 print("\033[95m {}\033[00m".format(WHITE_SPACE + "[4] Change Default Mount Location"))
                 print("\033[95m {}\033[00m".format(WHITE_SPACE + "[5] Delete Database"))
                 print("\033[95m {}\033[00m".format(WHITE_SPACE + "[6] Exit"))
-                input_text = "\033[91m {}\033[00m".format(WHITE_SPACE + "----> ")
-                input4 = str(input(input_text)).strip()
-                subprocess.run("clear")
-                if input4 == "1":
+                input_text = "\033[91m {}\033[00m".format("Option : ")
+
+                print()
+                print(LINES)
+
+                choice = input(input_text).strip()
+                print(LINES)
+
+                if choice == "1" and DefaultMountLocation:
                     mount(DefaultMountLocation, mountFolderName, cursor, sqliteConnection)
-                elif input4 == "2":
+                elif choice == "2":
                     unmount()
-                elif input4 == "3":
+                elif choice == "3":
                     disk_poweroff()
-                elif input4 == "4":
+                elif choice == "4":
                     change_default_mount_location(DefaultMountLocation, cursor, sqliteConnection)
-                elif input4 == "5":
+                elif choice == "5":
                     delete_database()
-                elif input4 == "6":
+                elif choice == "6":
                     print(BYE_MESSAGE)
                     break
                 else:
-                    print("Wrong input, try again!")
+                    print("\033[91m {}\033[00m".format("Please Enter a Valid Option!"))
+                    input("\033[91m {}\033[00m".format("Press Any Key To continue! "))
         except KeyboardInterrupt:
             print(BYE_MESSAGE)
             break
