@@ -205,7 +205,7 @@ while True:
             subprocess.run("clear")
             print(lines1)
             print("\033[93m {}\033[00m".format(white_space + f"Welcome {current_user} To Drive Mounter!"))
-            print("\033[93m {}\033[00m".format(white_space + "By github.com/stking68"))
+            print("\033[93m {}\033[00m".format(white_space + "By github.com/satyarsh"))
             print(lines1)
 
             print("\033[96m {}\033[00m".format(white_space + "Choose an Option"))
